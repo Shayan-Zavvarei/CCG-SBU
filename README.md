@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="images/group-logo.png" alt="CCG-SBU Logo" width="600">
+  <img src="image /ccg.jpg" alt="CCG-SBU Logo" width="600">
 </p>
-
-# CCG-SBU
 
 # CCG-SBU
 
