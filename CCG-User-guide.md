@@ -189,96 +189,53 @@ nano Dockerfile
 Copy and paste the following complete Dockerfile content:
 ```bash 
 # Use Python 3.11 base image from Jupyter
-
 FROM quay.io/jupyter/minimal-notebook:python-3.11
 
-# Switch to root user for system package installation
-
+# Switch to root for system packages
 USER root
 
-# Install system dependencies
+# Install system dependencies (note: no \&\&, just &&)
+RUN apt-get update && \
+    apt-get install -y \
+        git git-lfs pre-commit \
+        tmux nano vim wget curl htop \
+        gfortran \
+        texlive texlive-latex-extra \
+        ncdu rsync \
+        build-essential \
+        make cmake clang \
+        bzip2 tar gzip \
+        podman distrobox \
+        openmpi-bin openmpi-common \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \&\& \
-apt-get install -y \
-git git-lfs pre-commit \
-tmux nano vim wget curl htop \
-gfortran \
-texlive texlive-latex-extra \
-ncdu rsync \
-build-essential \
-make cmake clang \
-bzip2 \
-podman distrobox \
-openmpi-bin openmpi-common \
-ca-certificates \
-\&\& rm -rf /var/lib/apt/lists/*
-
-# Switch back to jovyan user (standard Jupyter user)
-
-USER \${NB_UID}
+# Switch back to jovyan user
+USER jovyan
 
 # Set environment variables for molino
-
 ENV HDF5_USE_FILE_LOCKING=FALSE
 ENV MOLINO_DIR=/home/jovyan/DataFiles/Molino/Data
 
-# Stage 1: Install base scientific packages
+# Install Python packages in stages
+RUN conda install -y numpy pandas scipy matplotlib && conda clean -afy
+RUN conda install -y camb astropy h5py && conda clean -afy
+RUN conda install -y emcee corner getdist seaborn && conda clean -afy
+RUN conda install -y scikit-learn py-xgboost && conda clean -afy
+RUN conda install -y networkx sympy joblib tqdm plotly pillow && conda clean -afy
+RUN conda install -y opencv pymc scikit-image mpi4py && conda clean -afy
+RUN conda install -y dask-gateway dask distributed && conda clean -afy
 
-RUN conda install -y \
-numpy pandas scipy matplotlib \
-\&\& conda clean -afy
-
-# Stage 2: Install astronomy packages
-
-RUN conda install -y \
-camb astropy h5py \
-\&\& conda clean -afy
-
-# Stage 3: Install statistical packages
-
-RUN conda install -y \
-emcee corner getdist seaborn \
-\&\& conda clean -afy
-
-# Stage 4: Install machine learning packages
-
-RUN conda install -y \
-scikit-learn py-xgboost \
-\&\& conda clean -afy
-
-# Stage 5: Install utility packages
-
-RUN conda install -y \
-networkx sympy joblib tqdm plotly pillow \
-\&\& conda clean -afy
-
-# Stage 6: Install additional scientific packages
-
-RUN conda install -y \
-opencv pymc scikit-image mpi4py \
-\&\& conda clean -afy
-
-# Stage 7: Install dask and distributed computing
-
-RUN conda install -y \
-dask-gateway dask distributed \
-\&\& conda clean -afy
-
-# Stage 8: Install cobaya via pip
-
+# Install cobaya via pip
 RUN pip install --no-cache-dir cobaya
 
-# Stage 9: Clone and install molino
-
-RUN git clone https://github.com/changhoonhahn/molino.git \&\& \
-cd molino \&\& \
-pip install --no-cache-dir -e .
+# Clone and install molino
+RUN git clone https://github.com/changhoonhahn/molino.git && \
+    cd molino && \
+    pip install --no-cache-dir -e .
 
 # Set working directory
-
 WORKDIR /home/jovyan
-
-# Note: CMD is inherited from base image
 ```
 
 **Important Notes:**
